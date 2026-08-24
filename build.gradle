@@ -1,0 +1,67 @@
+apply plugin: "java"
+apply plugin: 'kotlin'
+
+sourceSets.main.java.srcDirs = ["src"]
+
+repositories{
+    mavenCentral()
+
+    //Downloads the dependencies JAR file from Mindustry releases; does not use any real repository. Surprisingly, this is the most reliable option.
+    ivy{
+        url = 'https://github.com/'
+        patternLayout{artifact '/[organisation]/[module]/releases/download/[revision]/dependencies.jar'}
+        metadataSources{ artifact() }
+    }
+
+    //If the version is set to 'latest', downloads the latest Mindustry *release* as a dependency
+    ivy{
+        url = 'https://github.com/'
+        patternLayout{artifact '/[organisation]/[module]/releases/[revision]/download/dependencies.jar'}
+        metadataSources{ artifact() }
+    }
+
+    //For depending on the absolute newest commit for Mindustry
+    ivy{
+        url = 'https://github.com/'
+        patternLayout{artifact '/[organisation]/[module]/releases/download/master/[revision].jar'}
+        metadataSources{ artifact() }
+    }
+}
+
+java{
+}
+
+ext{
+    // Mindustry version to depend on.
+    // Valid values:
+    // - latest: depend on the latest release of mindustry
+    // - be: depend on the very latest commit of mindustry
+    // - v<number>: depend on a specific commit (e.g. v158.1)
+    mindustryVersion = "latest"
+}
+
+dependencies{
+    compileOnly mindustryVersion == "be" ? "Anuken:MindustryBuilds:latest" : "Anuken:Mindustry:$mindustryVersion"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+}
+
+jar{
+    archiveFileName = "${project.name}.jar"
+
+    from{
+        configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+buildscript {
+    ext.kotlin_version = '2.4.10'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+kotlin {
+    jvmToolchain(17)
+}
